@@ -1,0 +1,26 @@
+# Python 字节码与缓存
+__pycache__/
+*.py[cod]
+
+# 虚拟环境(几百 MB,和操作系统绑定,绝不能提交)
+.venv/
+venv/
+
+# 密钥与本地配置(绝不能提交!)
+.env
+
+# 数据库文件
+*.db
+*.sqlite3
+
+# 测试与检查工具缓存
+.pytest_cache/
+.ruff_cache/
+
+# 本项目生成的日志文件
+logs/
+
+# 编辑器
+.idea/
+.vscode/
+.DS_Store
