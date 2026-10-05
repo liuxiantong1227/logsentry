@@ -33,6 +33,16 @@ class OdsLogRaw(Base):
     received_at = Column(DateTime, default=datetime.now)
     parsed = Column(Boolean, default=False, index=True)  # 是否已解析
 
+class OdsLogDeadLetter(Base):
+    """死信表:解析失败的原始日志留存,供人工排查和重跑。"""
+    __tablename__ = "ods_log_dead_letter"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    raw_id = Column(Integer, index=True)     # 对应 ods_log_raw.id
+    raw_line = Column(Text)
+    error = Column(String(200))
+    created_at = Column(DateTime, default=datetime.now)
+
 #DWD明细层
 class DwdLogEvent(Base):
     """结构化事件表:正则解析后的字段。"""
