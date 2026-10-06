@@ -21,11 +21,19 @@ def sync_alerts(session: Session) -> int:
         ).scalar_one_or_none()
         if exists:
             continue
+        # 基线为 0 时无法计算倍数,文案要单独处理
+        # (否则会显示成"基线 0.0,超出 0.0 倍",读起来莫名其妙)
+        if a.baseline > 0:
+            message = (f"[{a.severity.upper()}] 接口 {a.path} 的 {a.metric_name} "
+                       f"达 {a.value},基线 {a.baseline},超出 {a.ratio} 倍")
+        else:
+            message = (f"[{a.severity.upper()}] 接口 {a.path} 的 {a.metric_name} "
+                       f"达 {a.value}(历史基线为 0,本次突增)")
+
         session.add(OpsAlert(
             anomaly_id=a.id,
             level=a.severity,
-            message=(f"[{a.severity.upper()}] 接口 {a.path} 的 {a.metric_name} "
-                     f"达 {a.value},基线 {a.baseline},超出 {a.ratio} 倍"),
+            message=message,
         ))
         created += 1
     if created:

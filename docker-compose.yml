@@ -1,8 +1,22 @@
-# 阶段 8 再补完整编排
 services:
   app:
     build: .
+    container_name: logsentry
     ports:
       - "8000:8000"
-    env_file:
-      - .env
+    environment:
+      DATABASE_URL: sqlite:///./data/logsentry.db
+      SCHEDULER_ENABLED: "true"
+      ANOMALY_RATIO: "1.5"
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.deepseek.com/v1}
+      LLM_MODEL: ${LLM_MODEL:-deepseek-chat}
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped

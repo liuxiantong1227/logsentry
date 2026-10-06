@@ -5,6 +5,7 @@
     python scripts/gen_traffic.py --count 3000             # 造 3000 条
     python scripts/gen_traffic.py --fail-rate 0.4 --slow-rate 0.3   # 注入故障
 """
+import os
 import argparse
 import random
 import sys
@@ -16,7 +17,7 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-API_URL = "http://127.0.0.1:8000/api/logs/ingest"
+API_URL = os.getenv("INGEST_URL", "http://127.0.0.1:8000/api/logs/ingest")
 
 # 模拟的接口列表:混合了高频接口和低频接口
 PATHS = ["/api/orders", "/api/users", "/api/products", "/api/cart", "/api/pay", "/health"]

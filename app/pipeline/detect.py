@@ -72,8 +72,24 @@ def detect_anomalies(session: Session) -> list[dict]:
         for field, label, ratio_limit, floor, severity in RULES:
             value = getattr(cur, field) or 0.0
             base = _median(bucket[field])
+
             if base <= 0:
-                continue      # 基线为 0 无法计算倍数,交给绝对阈值单独处理
+                # 【关键修复】基线为 0 表示"历史上从没出过错",无法计算倍数。
+                # 这时【绝不能跳过】—— 因为"从 0 突然变成有错"是最典型的故障形态!
+                # 改用绝对阈值判定:只要超过地板值就告警。
+                if value > floor:
+                    found.append({
+                        "minute": cur.minute,
+                        "path": cur.path,
+                        "metric_name": field,
+                        "value": round(float(value), 4),
+                        "baseline": 0.0,
+                        "ratio": 0.0,        # 基线为 0 无法算倍数,用 0 表示
+                        "severity": severity,
+                        "label": label,
+                    })
+                continue
+
             if value > base * ratio_limit and value > floor:
                 found.append({
                     "minute": cur.minute,
