@@ -1,11 +1,155 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <title>LogSentinel 看板</title>
-  </head>
-  <body>
-    <h1>LogSentinel</h1>
-    <p>看板占位页，阶段 7 再实现。</p>
-  </body>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LogSentinel · 智能运维日志分析平台</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root { --ink:#1f3a5f; --bg:#f4f6f9; --card:#fff; --line:#e3e8ef; --muted:#6b7a90; --danger:#b00020; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:"Microsoft YaHei",system-ui,sans-serif; background:var(--bg); color:#20303f; }
+  header { background:linear-gradient(120deg,#1f3a5f,#2b6cb0); color:#fff; padding:24px 32px; }
+  header h1 { margin:0 0 6px; font-size:21px; }
+  header p { margin:0; opacity:.85; font-size:13px; }
+  main { max-width:1200px; margin:0 auto; padding:22px 32px 60px; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:20px; }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 18px; }
+  .kpi .label { font-size:12px; color:var(--muted); }
+  .kpi .value { font-size:24px; font-weight:700; color:var(--ink); margin-top:6px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:18px; }
+  .card h2 { margin:0 0 12px; font-size:15px; color:var(--ink); }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { text-align:left; padding:8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  .tag { display:inline-block; padding:1px 8px; border-radius:10px; font-size:11px; background:#e8f5e9; color:#2e7d32; }
+  .tag.critical { background:#fdecea; color:var(--danger); font-weight:600; }
+  .tag.warning { background:#fff8e1; color:#b8860b; }
+  button { border:0; border-radius:6px; padding:6px 12px; background:var(--ink); color:#fff; cursor:pointer; font-size:12px; }
+  button:disabled { opacity:.5; cursor:default; }
+  pre { white-space:pre-wrap; background:#fafbfc; border:1px solid var(--line); border-radius:8px; padding:12px; font-size:12.5px; line-height:1.7; margin:8px 0 0; }
+  footer { text-align:center; color:var(--muted); font-size:12px; padding:20px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>LogSentinel · 智能运维日志分析平台</h1>
+  <p>日志采集 → 解析入库 → 指标聚合 → 异常检测 → AI 根因分析</p>
+</header>
+
+<main>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="card">
+    <h2>指标趋势(最近 2 小时)</h2>
+    <canvas id="trendChart" height="90"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>告警列表</h2>
+    <table>
+      <thead><tr><th style="width:90px">级别</th><th>内容</th><th style="width:100px">时间</th><th style="width:150px">操作</th></tr></thead>
+      <tbody id="alertTable"><tr><td colspan="4">加载中…</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>AI 根因分析</h2>
+    <div id="aiBox" style="color:var(--muted);font-size:13px">点击上方告警的「AI 分析」按钮,查看根因推断与排查建议。</div>
+  </div>
+</main>
+
+<footer>LogSentinel v0.1.0 · FastAPI + SQLAlchemy + pandas + APScheduler + LLM</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+async function api(url, options) {
+  const res = await fetch(url, options);
+  if (!res.ok) throw new Error(url + " -> HTTP " + res.status);
+  return res.json();
+}
+
+async function loadKpis() {
+  const h = await api("/api/health");
+  $("kpis").innerHTML = [
+    ["原始日志(ODS)", h.raw_log_rows + " 条"],
+    ["服务状态", h.status === "ok" ? "正常 " : "异常"],
+    ["版本", h.version],
+    ["AI 模式", h.llm_enabled ? "大模型" : "规则引擎"],
+  ].map(([l, v]) => `<div class="kpi"><div class="label">${l}</div><div class="value">${v}</div></div>`).join("");
+}
+
+async function loadTrend() {
+  const rows = await api("/api/metrics?minutes=120");
+  if (!rows.length) return;
+
+  // 按接口分别画错误率曲线
+  const paths = [...new Set(rows.map(r => r.path))];
+  const labels = [...new Set(rows.map(r => r.minute.slice(11, 16)))].sort();
+  const palette = ["#2b6cb0", "#4a8f4a", "#b8860b", "#b00020", "#7c4dff", "#00838f"];
+
+  const datasets = paths.map((p, i) => {
+    const map = {};
+    rows.filter(r => r.path === p).forEach(r => { map[r.minute.slice(11, 16)] = +(r.error_rate * 100).toFixed(2); });
+    return {
+      label: p, borderColor: palette[i % palette.length], backgroundColor: "transparent",
+      data: labels.map(l => (l in map ? map[l] : null)), tension: 0.3, spanGaps: true,
+    };
+  });
+
+  new Chart($("trendChart"), {
+    type: "line",
+    data: { labels, datasets },
+    options: {
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } } },
+      scales: { y: { beginAtZero: true, title: { display: true, text: "错误率 %" } } },
+      elements: { point: { radius: 0 } },
+    },
+  });
+}
+
+async function loadAlerts() {
+  const data = await api("/api/alerts?limit=20");
+  const tbody = $("alertTable");
+  if (!data.items.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">暂无告警。可以先跑造流量脚本并注入故障试试。</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.items.map(a => `
+    <tr>
+      <td><span class="tag ${a.level}">${a.level}</span></td>
+      <td>${a.message}</td>
+      <td>${a.created_at.slice(5, 16).replace("T", " ")}</td>
+      <td>
+        <button onclick="diagnose(${a.anomaly_id})">AI 分析</button>
+        ${a.acked ? '<span style="font-size:11px;color:var(--muted)">已确认</span>'
+                  : `<button style="background:#6b7a90" onclick="ack(${a.id})">确认</button>`}
+      </td>
+    </tr>`).join("");
+}
+
+async function diagnose(anomalyId) {
+  $("aiBox").innerHTML = "AI 正在分析,请稍候…";
+  try {
+    const d = await api(`/api/ai/diagnose/${anomalyId}`, { method: "POST" });
+    $("aiBox").innerHTML =
+      `<div style="margin-bottom:6px;font-size:12px;color:var(--muted)">模型:${d.model} · 缓存:${d.cached ? "是" : "否"} · tokens:${d.tokens}</div>
+       <pre>${d.answer}</pre>`;
+  } catch (e) {
+    $("aiBox").innerHTML = `<span style="color:var(--danger)">分析失败:${e.message}</span>`;
+  }
+}
+
+async function ack(alertId) {
+  await api(`/api/alerts/${alertId}/ack`, { method: "POST" });
+  await loadAlerts();
+}
+
+loadKpis().catch(e => console.error(e));
+loadTrend().catch(e => console.error(e));
+loadAlerts().catch(e => console.error(e));
+setInterval(() => { loadKpis(); loadAlerts(); }, 30000);   // 每 30 秒自动刷新
+</script>
+</body>
 </html>
