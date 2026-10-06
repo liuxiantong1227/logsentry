@@ -8,8 +8,19 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
 from app import __version__
-from app.api import health, logs, metrics          # 后续阶段会继续加入 metrics / alerts / ai
+from app.api import health, logs, metrics, alerts          # 后续阶段会继续加入 metrics / alerts / ai
 from app.db import init_db
+from app.pipeline.scheduler import start_scheduler, stop_scheduler
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    log.info("数据库初始化完成,LogSentinel 启动")
+    start_scheduler()          # ← 启动定时任务
+    yield
+    stop_scheduler()           # ← 关闭时停止
+    log.info("LogSentinel 关闭")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -39,6 +50,7 @@ app = FastAPI(
 app.include_router(health.router)
 app.include_router(logs.router)
 app.include_router(metrics.router)
+app.include_router(alerts.router)
 
 @app.get("/", include_in_schema=False)
 def index() -> FileResponse:
