@@ -34,12 +34,14 @@ def build_line(ts: datetime, ip: str, method: str, path: str,
 
 
 def make_batch(count: int, fail_rate: float, slow_rate: float,
-               base_time: datetime) -> list[dict]:
-    """生成一批日志。fail_rate = 错误请求比例;slow_rate = 慢请求比例。"""
+               base_time: datetime, span_seconds: int = 600) -> list[dict]:
+    """生成一批日志。fail_rate = 错误比例;slow_rate = 慢请求比例;
+    span_seconds = 这批日志要铺开的时间跨度(秒)。"""
+    step = span_seconds / max(count, 1)     # 每条日志之间的时间间隔
     logs = []
     for i in range(count):
         # 时间在 base_time 前后均匀分布,模拟真实的时间跨度
-        ts = base_time + timedelta(seconds=i * 0.2)
+        ts = base_time + timedelta(seconds=i * step)
 
         path = random.choices(PATHS, weights=PATH_WEIGHTS, k=1)[0]
         method = random.choice(METHODS)
@@ -86,7 +88,7 @@ def main() -> int:
     end_time = datetime.now()
     base_time = end_time - timedelta(minutes=args.minutes)
 
-    logs = make_batch(args.count, args.fail_rate, args.slow_rate, base_time)
+    logs = make_batch(args.count, args.fail_rate, args.slow_rate, base_time, args.minutes * 60)
     try:
         sent = send(logs)
     except httpx.ConnectError:

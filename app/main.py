@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
 from app import __version__
-from app.api import health, logs          # 后续阶段会继续加入 metrics / alerts / ai
+from app.api import health, logs, metrics          # 后续阶段会继续加入 metrics / alerts / ai
 from app.db import init_db
 
 logging.basicConfig(
@@ -38,7 +38,7 @@ app = FastAPI(
 
 app.include_router(health.router)
 app.include_router(logs.router)
-
+app.include_router(metrics.router)
 
 @app.get("/", include_in_schema=False)
 def index() -> FileResponse:
