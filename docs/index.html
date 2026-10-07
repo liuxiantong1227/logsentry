@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>LogSentinel · 智能运维日志分析平台</title>
+<style>
+  :root{--ink:#1f3a5f;--bg:#f4f6f9;--card:#fff;--line:#e6ecf3;--muted:#7b8a9c;
+        --danger:#b00020;--warn:#b8860b;--ok:#1e7b4f;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:#20303f;
+       font-family:"Microsoft YaHei",system-ui,-apple-system,sans-serif;}
+  header{background:linear-gradient(120deg,#1f3a5f,#2b6cb0);color:#fff;padding:26px 34px;}
+  header h1{margin:0 0 8px;font-size:22px;font-weight:700;}
+  header p{margin:0;opacity:.88;font-size:13px;line-height:1.7;}
+  .snapshot{display:inline-block;margin-top:10px;padding:3px 10px;border-radius:12px;
+            background:rgba(255,255,255,.18);font-size:12px;}
+  main{max-width:1180px;margin:0 auto;padding:24px 34px 60px;}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px;}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;}
+  .kpi .label{font-size:12px;color:var(--muted);}
+  .kpi .value{font-size:26px;font-weight:700;color:var(--ink);margin-top:6px;line-height:1.1;}
+  .kpi .sub{font-size:11px;color:var(--muted);margin-top:4px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+        padding:18px 20px;margin-bottom:18px;}
+  .card h2{margin:0 0 14px;font-size:15px;color:var(--ink);display:flex;
+           justify-content:space-between;align-items:center;}
+  .card h2 .range{font-size:12px;color:var(--muted);font-weight:400;}
+  .chart{width:100%;height:230px;display:block;}
+  .nodata{color:var(--muted);font-size:13px;padding:16px 0;text-align:center;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);}
+  th{color:var(--muted);font-weight:600;font-size:12px;}
+  code{background:#f2f6fa;padding:1px 6px;border-radius:4px;
+       font-family:Consolas,Monaco,monospace;font-size:12.5px;}
+  .tag{display:inline-block;padding:2px 9px;border-radius:11px;font-size:11px;font-weight:600;}
+  .tag.critical{background:#fdecea;color:var(--danger);}
+  .tag.warning{background:#fff8e1;color:var(--warn);}
+  .tag.ok{background:#e8f5e9;color:var(--ok);font-weight:400;margin-left:8px;}
+  .tag.pending{background:#eef2f7;color:var(--muted);font-weight:400;margin-left:8px;}
+  .alert{border-left:3px solid var(--line);padding:10px 14px;margin-bottom:8px;
+         border-radius:0 6px 6px 0;background:#fbfcfe;}
+  .alert.critical{border-left-color:var(--danger);}
+  .alert.warning{border-left-color:var(--warn);}
+  .alert-head{display:flex;align-items:center;gap:4px;margin-bottom:5px;}
+  .alert-time{font-size:11px;color:var(--muted);margin-left:auto;}
+  .alert-msg{font-size:13px;line-height:1.6;}
+  .diag-meta{font-size:12px;color:var(--muted);margin-bottom:10px;}
+  pre.diag-body{white-space:pre-wrap;background:#fafbfc;border:1px solid var(--line);
+                border-radius:8px;padding:14px;font-size:12.8px;line-height:1.75;
+                font-family:"Microsoft YaHei",Consolas,monospace;margin:0;max-height:420px;
+                overflow:auto;}
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:22px;line-height:1.8;}
+</style>
+</head>
+<body>
+<header>
+  <h1>LogSentinel · 智能运维日志分析平台</h1>
+  <p>日志采集 → 数仓分层 → 指标聚合 → 异常检测 → 告警闭环 → AI 根因分析</p>
+  <div class="snapshot">📸 静态数据快照 · 生成于 2026-10-07 15:22:37</div>
+</header>
+
+<main>
+  <div class="kpis">
+    <div class="kpi"><div class="label">原始日志(ODS)</div><div class="value">3500</div><div class="sub">条</div></div>
+    <div class="kpi"><div class="label">结构化事件(DWD)</div><div class="value">3500</div><div class="sub">条 · 解析成功</div></div>
+    <div class="kpi"><div class="label">分钟级指标(ADS)</div><div class="value">451</div><div class="sub">行</div></div>
+    <div class="kpi"><div class="label">检出异常</div><div class="value" style="color:var(--danger)">14</div><div class="sub">条</div></div>
+    <div class="kpi"><div class="label">生成告警</div><div class="value" style="color:var(--warn)">14</div><div class="sub">条</div></div>
+  </div>
+
+  <div class="card">
+    <h2>错误率趋势 <span class="range">2026-10-06 22:04 ~ 2026-10-06 23:40</span></h2>
+    <svg viewBox="0 0 860 230" class="chart" preserveAspectRatio="none"><line x1="62" y1="200.0" x2="842" y2="200.0" stroke="#eaeff5" stroke-width="1"/><text x="54" y="204.0" text-anchor="end" font-size="11" fill="#93a1b3">0.0%</text><line x1="62" y1="154.5" x2="842" y2="154.5" stroke="#eaeff5" stroke-width="1"/><text x="54" y="158.5" text-anchor="end" font-size="11" fill="#93a1b3">11.8%</text><line x1="62" y1="109.0" x2="842" y2="109.0" stroke="#eaeff5" stroke-width="1"/><text x="54" y="113.0" text-anchor="end" font-size="11" fill="#93a1b3">23.6%</text><line x1="62" y1="63.5" x2="842" y2="63.5" stroke="#eaeff5" stroke-width="1"/><text x="54" y="67.5" text-anchor="end" font-size="11" fill="#93a1b3">35.4%</text><line x1="62" y1="18.0" x2="842" y2="18.0" stroke="#eaeff5" stroke-width="1"/><text x="54" y="22.0" text-anchor="end" font-size="11" fill="#93a1b3">47.3%</text><polygon points="62.0,200.0 62.0,131.2 72.0,123.0 82.0,113.3 92.0,151.9 102.0,180.7 112.0,151.9 122.0,123.0 132.0,180.7 142.0,132.6 152.0,171.1 162.0,151.9 172.0,151.9 182.0,171.1 192.0,180.7 202.0,142.2 212.0,161.5 222.0,151.9 232.0,180.7 242.0,142.2 252.0,171.1 262.0,123.0 272.0,171.1 282.0,161.5 292.0,180.7 302.0,123.0 312.0,180.7 322.0,161.5 332.0,161.5 342.0,190.4 352.0,123.0 362.0,200.0 372.0,200.0 382.0,200.0 392.0,194.9 402.0,200.0 412.0,194.9 422.0,194.9 432.0,191.0 442.0,200.0 452.0,200.0 462.0,200.0 472.0,189.6 482.0,200.0 492.0,200.0 502.0,189.9 512.0,200.0 522.0,200.0 532.0,200.0 542.0,200.0 552.0,189.6 562.0,200.0 572.0,200.0 582.0,200.0 592.0,189.6 602.0,200.0 612.0,189.6 622.0,189.9 632.0,200.0 642.0,200.0 652.0,189.6 662.0,189.9 672.0,200.0 682.0,200.0 692.0,200.0 702.0,200.0 712.0,200.0 722.0,200.0 732.0,200.0 742.0,189.9 752.0,200.0 762.0,200.0 772.0,200.0 782.0,189.9 792.0,200.0 802.0,200.0 812.0,200.0 822.0,200.0 832.0,74.9 842.0,41.7 842.0,200.0" fill="#b00020" fill-opacity="0.10"/><polyline points="62.0,131.2 72.0,123.0 82.0,113.3 92.0,151.9 102.0,180.7 112.0,151.9 122.0,123.0 132.0,180.7 142.0,132.6 152.0,171.1 162.0,151.9 172.0,151.9 182.0,171.1 192.0,180.7 202.0,142.2 212.0,161.5 222.0,151.9 232.0,180.7 242.0,142.2 252.0,171.1 262.0,123.0 272.0,171.1 282.0,161.5 292.0,180.7 302.0,123.0 312.0,180.7 322.0,161.5 332.0,161.5 342.0,190.4 352.0,123.0 362.0,200.0 372.0,200.0 382.0,200.0 392.0,194.9 402.0,200.0 412.0,194.9 422.0,194.9 432.0,191.0 442.0,200.0 452.0,200.0 462.0,200.0 472.0,189.6 482.0,200.0 492.0,200.0 502.0,189.9 512.0,200.0 522.0,200.0 532.0,200.0 542.0,200.0 552.0,189.6 562.0,200.0 572.0,200.0 582.0,200.0 592.0,189.6 602.0,200.0 612.0,189.6 622.0,189.9 632.0,200.0 642.0,200.0 652.0,189.6 662.0,189.9 672.0,200.0 682.0,200.0 692.0,200.0 702.0,200.0 712.0,200.0 722.0,200.0 732.0,200.0 742.0,189.9 752.0,200.0 762.0,200.0 772.0,200.0 782.0,189.9 792.0,200.0 802.0,200.0 812.0,200.0 822.0,200.0 832.0,74.9 842.0,41.7" fill="none" stroke="#b00020" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="62.0" cy="131.2" r="3" fill="#b00020"/><circle cx="842.0" cy="41.7" r="3" fill="#b00020"/></svg>
+  </div>
+
+  <div class="card">
+    <h2>P95 延迟趋势 <span class="range">22:04 ~ 23:40</span></h2>
+    <svg viewBox="0 0 860 230" class="chart" preserveAspectRatio="none"><line x1="62" y1="200.0" x2="842" y2="200.0" stroke="#eaeff5" stroke-width="1"/><text x="54" y="204.0" text-anchor="end" font-size="11" fill="#93a1b3">0ms</text><line x1="62" y1="154.5" x2="842" y2="154.5" stroke="#eaeff5" stroke-width="1"/><text x="54" y="158.5" text-anchor="end" font-size="11" fill="#93a1b3">1259ms</text><line x1="62" y1="109.0" x2="842" y2="109.0" stroke="#eaeff5" stroke-width="1"/><text x="54" y="113.0" text-anchor="end" font-size="11" fill="#93a1b3">2518ms</text><line x1="62" y1="63.5" x2="842" y2="63.5" stroke="#eaeff5" stroke-width="1"/><text x="54" y="67.5" text-anchor="end" font-size="11" fill="#93a1b3">3777ms</text><line x1="62" y1="18.0" x2="842" y2="18.0" stroke="#eaeff5" stroke-width="1"/><text x="54" y="22.0" text-anchor="end" font-size="11" fill="#93a1b3">5037ms</text><polygon points="62.0,200.0 62.0,41.7 72.0,81.5 82.0,97.2 92.0,124.5 102.0,127.4 112.0,108.2 122.0,140.1 132.0,95.2 142.0,103.3 152.0,140.9 162.0,65.8 172.0,99.8 182.0,87.5 192.0,63.8 202.0,102.4 212.0,191.6 222.0,95.2 232.0,111.7 242.0,63.6 252.0,106.9 262.0,191.1 272.0,191.1 282.0,130.0 292.0,179.2 302.0,82.6 312.0,80.9 322.0,191.1 332.0,62.5 342.0,100.0 352.0,110.7 362.0,155.5 372.0,193.1 382.0,191.7 392.0,191.2 402.0,191.5 412.0,125.0 422.0,176.6 432.0,79.5 442.0,158.9 452.0,191.2 462.0,191.9 472.0,191.5 482.0,191.1 492.0,191.6 502.0,191.4 512.0,118.4 522.0,191.0 532.0,191.5 542.0,117.3 552.0,192.6 562.0,68.1 572.0,147.2 582.0,148.8 592.0,191.9 602.0,191.5 612.0,160.6 622.0,109.4 632.0,113.9 642.0,191.7 652.0,132.1 662.0,122.2 672.0,140.9 682.0,191.3 692.0,191.0 702.0,191.0 712.0,161.6 722.0,160.6 732.0,191.3 742.0,126.3 752.0,191.3 762.0,191.6 772.0,173.4 782.0,191.9 792.0,191.7 802.0,170.2 812.0,164.6 822.0,89.7 832.0,57.4 842.0,45.7 842.0,200.0" fill="#b8860b" fill-opacity="0.10"/><polyline points="62.0,41.7 72.0,81.5 82.0,97.2 92.0,124.5 102.0,127.4 112.0,108.2 122.0,140.1 132.0,95.2 142.0,103.3 152.0,140.9 162.0,65.8 172.0,99.8 182.0,87.5 192.0,63.8 202.0,102.4 212.0,191.6 222.0,95.2 232.0,111.7 242.0,63.6 252.0,106.9 262.0,191.1 272.0,191.1 282.0,130.0 292.0,179.2 302.0,82.6 312.0,80.9 322.0,191.1 332.0,62.5 342.0,100.0 352.0,110.7 362.0,155.5 372.0,193.1 382.0,191.7 392.0,191.2 402.0,191.5 412.0,125.0 422.0,176.6 432.0,79.5 442.0,158.9 452.0,191.2 462.0,191.9 472.0,191.5 482.0,191.1 492.0,191.6 502.0,191.4 512.0,118.4 522.0,191.0 532.0,191.5 542.0,117.3 552.0,192.6 562.0,68.1 572.0,147.2 582.0,148.8 592.0,191.9 602.0,191.5 612.0,160.6 622.0,109.4 632.0,113.9 642.0,191.7 652.0,132.1 662.0,122.2 672.0,140.9 682.0,191.3 692.0,191.0 702.0,191.0 712.0,161.6 722.0,160.6 732.0,191.3 742.0,126.3 752.0,191.3 762.0,191.6 772.0,173.4 782.0,191.9 792.0,191.7 802.0,170.2 812.0,164.6 822.0,89.7 832.0,57.4 842.0,45.7" fill="none" stroke="#b8860b" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="62.0" cy="41.7" r="3" fill="#b8860b"/><circle cx="842.0" cy="45.7" r="3" fill="#b8860b"/></svg>
+  </div>
+
+  <div class="card">
+    <h2>接口维度汇总</h2>
+    <table>
+      <thead><tr><th>接口</th><th>请求数</th><th>错误数</th><th>错误率</th><th>平均 P95</th></tr></thead>
+      <tbody><tr><td><code>/api/orders</code></td><td>1111</td><td>105</td><td>9.45%</td><td>795.6 ms</td></tr><tr><td><code>/api/users</code></td><td>884</td><td>76</td><td>8.60%</td><td>772.3 ms</td></tr><tr><td><code>/api/products</code></td><td>673</td><td>45</td><td>6.69%</td><td>798.1 ms</td></tr><tr><td><code>/api/cart</code></td><td>363</td><td>29</td><td>7.99%</td><td>601.3 ms</td></tr><tr><td><code>/api/pay</code></td><td>312</td><td>41</td><td>13.14%</td><td>495.5 ms</td></tr><tr><td><code>/health</code></td><td>157</td><td>17</td><td>10.83%</td><td>540.9 ms</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>告警列表 <span class="range">最近 14 条</span></h2>
+    <div class="alert critical"><div class="alert-head"><span class="tag critical">CRITICAL</span><span class="tag ok">已确认</span><span class="alert-time">2026-10-06 23:40</span></div><div class="alert-msg">[CRITICAL] 接口 /health 的 error_rate 达 0.4167,基线 0.0,超出 0.0 倍</div></div><div class="alert critical"><div class="alert-head"><span class="tag critical">CRITICAL</span><span class="tag ok">已确认</span><span class="alert-time">2026-10-06 23:40</span></div><div class="alert-msg">[CRITICAL] 接口 /api/products 的 error_rate 达 0.4062,基线 0.0,超出 0.0 倍</div></div><div class="alert critical"><div class="alert-head"><span class="tag critical">CRITICAL</span><span class="tag ok">已确认</span><span class="alert-time">2026-10-06 23:40</span></div><div class="alert-msg">[CRITICAL] 接口 /api/users 的 error_rate 达 0.42,基线 0.0,超出 0.0 倍</div></div><div class="alert critical"><div class="alert-head"><span class="tag critical">CRITICAL</span><span class="tag ok">已确认</span><span class="alert-time">2026-10-06 23:40</span></div><div class="alert-msg">[CRITICAL] 接口 /api/pay 的 error_rate 达 0.4231,基线 0.0,超出 0.0 倍</div></div><div class="alert critical"><div class="alert-head"><span class="tag critical">CRITICAL</span><span class="tag ok">已确认</span><span class="alert-time">2026-10-06 23:40</span></div><div class="alert-msg">[CRITICAL] 接口 /api/orders 的 error_rate 达 0.3731,基线 0.0,超出 0.0 倍</div></div><div class="alert critical"><div class="alert-head"><span class="tag critical">CRITICAL</span><span class="tag ok">已确认</span><span class="alert-time">2026-10-06 23:40</span></div><div class="alert-msg">[CRITICAL] 接口 /api/cart 的 error_rate 达 0.5333,基线 0.0,超出 0.0 倍</div></div><div class="alert warning"><div class="alert-head"><span class="tag warning">WARNING</span><span class="tag ok">已确认</span><span class="alert-time">2026-10-06 23:40</span></div><div class="alert-msg">[WARNING] 接口 /api/users 的 p95_latency 达 4093.9,基线 230.1,超出 17.79 倍</div></div><div class="alert warning"><div class="alert-head"><span class="tag warning">WARNING</span><span class="tag pending">待处理</span><span class="alert-time">2026-10-06 23:40</span></div><div class="alert-msg">[WARNING] 接口 /health 的 p95_latency 达 3771.4,基线 182.4,超出 20.68 倍</div></div><div class="alert warning"><div class="alert-head"><span class="tag warning">WARNING</span><span class="tag pending">待处理</span><span class="alert-time">2026-10-06 23:40</span></div><div class="alert-msg">[WARNING] 接口 /api/pay 的 p95_latency 达 3991.0,基线 188.725,超出 21.15 倍</div></div><div class="alert warning"><div class="alert-head"><span class="tag warning">WARNING</span><span class="tag pending">待处理</span><span class="alert-time">2026-10-06 23:40</span></div><div class="alert-msg">[WARNING] 接口 /api/products 的 p95_latency 达 4120.05,基线 228.0,超出 18.07 倍</div></div><div class="alert warning"><div class="alert-head"><span class="tag warning">WARNING</span><span class="tag pending">待处理</span><span class="alert-time">2026-10-06 23:40</span></div><div class="alert-msg">[WARNING] 接口 /api/orders 的 p95_latency 达 4269.4,基线 224.15,超出 19.05 倍</div></div><div class="alert warning"><div class="alert-head"><span class="tag warning">WARNING</span><span class="tag pending">待处理</span><span class="alert-time">2026-10-06 23:40</span></div><div class="alert-msg">[WARNING] 接口 /api/cart 的 p95_latency 达 3449.4,基线 200.7,超出 17.19 倍</div></div><div class="alert warning"><div class="alert-head"><span class="tag warning">WARNING</span><span class="tag ok">已确认</span><span class="alert-time">2026-10-06 23:37</span></div><div class="alert-msg">[WARNING] 接口 /api/products 的 p95_latency 达 1453.6,基线 222.75,超出 6.53 倍</div></div><div class="alert warning"><div class="alert-head"><span class="tag warning">WARNING</span><span class="tag ok">已确认</span><span class="alert-time">2026-10-06 23:10</span></div><div class="alert-msg">[WARNING] 接口 /api/users 的 p95_latency 达 2435.5,基线 226.125,超出 10.77 倍</div></div>
+  </div>
+
+  <div class="card">
+    <h2>AI 根因分析(示例)</h2>
+    <div class="diag-meta">针对接口 <code>/health</code> 的 <code>error_rate</code> · 模型 deepseek-chat · 消耗 1808 tokens</div><pre class="diag-body"># 诊断报告
+
+## 【结论】
+最可能的原因是 **/health 接口所依赖的下游组件(数据库/缓存/依赖服务)在 23:39 前后出现响应劣化或部分不可用**,导致健康检查接口耗时从 ~200ms 骤升至 3~4s,并伴随 500/502/503 错误。**但仅凭现有证据无法确定具体是哪个下游组件**,需进一步确认。
+
+---
+
+## 【可能原因】
+
+**1. 下游依赖(DB/缓存/第三方服务)响应劣化或部分节点不可用(可能性最高)**
+- 依据:23:39 起 P95 从 ~200ms 突增至 3945ms,平均耗时同步飙升,且错误码同时出现 500(应用内部错误)、502(网关/上游不可达)、503(服务不可用)三种,典型的&quot;依赖抖动&quot;特征。
+- 依据:23:40 仍有 200 响应但耗时 2~4s,说明服务未完全宕机,而是&quot;慢 + 部分失败&quot;,符合下游连接池耗尽/超时/部分实例挂掉的模式。
+
+**2. 健康检查接口自身被高频调用打爆(可能性中)**
+- 依据:请求量从 23:30 的 1~3 次/分钟 骤增到 23:39 的 9 次、23:40 的 12 次,QPS 从 0.017 涨到 0.2(约 12 倍)。
+- 依据:但绝对量仍很小(12 次/分钟),单靠这点流量不足以打爆一个正常服务,更可能是&quot;上游探活/负载均衡因超时重试导致请求放大&quot;的**结果**而非原因。
+
+**3. 应用实例本身出现 GC 停顿 / 线程池耗尽 / 重启(可能性中)**
+- 依据:200 响应耗时也高达 2~4s,说明请求在应用内部排队,可能是 GC 或线程池饱和。
+- 依据:502/503 可能来自网关侧,提示后端实例可能短暂不可用。
+
+**4. 网络抖动或网关层异常(可能性低)**
+- 依据:502/503 可能由网关产生,但 500 是应用层错误,单纯网络问题难以解释 500。
+
+---
+
+## 【排查步骤】
+
+&gt; 按顺序执行,前一步结果决定下一步方向。
+
+**第 1 步:确认错误码分布与来源**
+```bash
+# 拉取 23:35~23:45 该接口的访问日志,按状态码聚合
+grep &#x27;/health&#x27; access.log | awk &#x27;$0 ~ /23:3[5-9]|23:4[0-5]/&#x27; | awk &#x27;{print $NF}&#x27; | sort | uniq -c
+```
+- 若 502/503 集中在网关日志、500 集中在应用日志 → 指向应用内部错误。
+
+**第 2 步:定位应用侧错误堆栈**
+```bash
+# 查应用日志中该时间段的 ERROR/Exception
+grep -E &#x27;23:3[9]|23:4[0-5]&#x27; app.log | grep -iE &#x27;error|exception|timeout|refused|pool&#x27;
+```
+- 重点看:是否有 `connection timeout`、`connection refused`、`pool exhausted`、`circuit breaker open` 等关键字,直接指向下游。
+
+**第 3 步:确认下游依赖健康度**
+```bash
+# 若为数据库:查慢查询与连接数
+# MySQL
+SHOW PROCESSLIST;
+SHOW GLOBAL STATUS LIKE &#x27;Threads_connected&#x27;;
+SHOW GLOBAL STATUS LIKE &#x27;Aborted_connects&#x27;;
+# 查慢日志
+tail -n 200 slow.log
+```
+```bash
+# 若为 Redis/缓存
+redis-cli -h &lt;host&gt; info clients
+redis-cli -h &lt;host&gt; --latency
+```
+- 对比 23:39 前后下游的 QPS、连接数、延迟曲线。
+
+**第 4 步:确认应用实例资源状态**
+```bash
+# 查该时段 GC 日志
+grep -E &#x27;23</pre>
+  </div>
+</main>
+
+<footer>
+  LogSentinel v0.1.0 · 本页面为静态数据快照,由 <code>scripts/export_static.py</code> 生成<br/>
+  技术栈:FastAPI · SQLAlchemy · pandas · APScheduler · Docker · GitHub Actions · LLM
+</footer>
+</body>
+</html>
