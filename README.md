@@ -3,7 +3,7 @@
 > 把散落的应用日志集中采集,自动聚合出每分钟的 **QPS / 错误率 / P95 延迟**,
 > 指标越界自动告警,并由 **AI 完成根因分析与排查建议**。
 
-[![CI](https://github.com/YOUR_GITHUB_USERNAME/logsentry/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_GITHUB_USERNAME/logsentry/actions)
+[![CI](https://github.com/liuxiantong1227/logsentry/actions/workflows/ci.yml/badge.svg)](https://github.com/liuxiantong1227/logsentry/actions)
 ![Python](https://img.shields.io/badge/Python-3.13-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-teal)
 ![Tests](https://img.shields.io/badge/tests-12%20passed-brightgreen)
@@ -104,7 +104,7 @@
 ## 五、快速开始
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/logsentry.git
+git clone https://github.com/liuxiantong1227/logsentry.git
 cd logsentry
 
 python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
