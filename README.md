@@ -1,20 +1,14 @@
 # LogSentinel · 智能运维日志分析平台
-
 > 把散落的应用日志集中采集,自动聚合出每分钟的 **QPS / 错误率 / P95 延迟**,
 > 指标越界自动告警,并由 **AI 完成根因分析与排查建议**。
-
 [![CI](https://github.com/liuxiantong1227/logsentry/actions/workflows/ci.yml/badge.svg)](https://github.com/liuxiantong1227/logsentry/actions)
 ![Python](https://img.shields.io/badge/Python-3.13-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-teal)
 ![Tests](https://img.shields.io/badge/tests-12%20passed-brightgreen)
 
-**🔗 在线演示**:`https://YOUR_APP.onrender.com`(部署后替换;免费实例闲置会休眠,首次访问需等约 30 秒)
-
-<!-- 截图放在 docs/ 目录下,部署后把下面这行的注释去掉 -->
-<!-- ![看板截图](docs/screenshot-dashboard.png) -->
-
+**🔗 在线演示**:<https://liuxiantong1227.github.io/logsentry/>
+> 这是一个**静态数据快照**(由 `scripts/export_static.py` 生成),单文件 19KB、零外部依赖、秒开。项目本身是一套可运行的完整服务。
 ---
-
 ## 一、项目背景
 
 真实运维场景里,应用日志分散在多台服务器上,出故障时只能靠人肉翻日志:
@@ -41,6 +35,7 @@
 | **优雅降级** | 未配置 API Key 或调用失败时,**自动切换规则引擎** |
 | **可观测性** | 健康探针(探数据库)、结构化日志、每分钟定时调度 |
 | **定时任务** | APScheduler 每分钟自动跑「解析 → 聚合 → 检测」 |
+| **静态导出** | `scripts/export_static.py` 可把看板导出为零依赖的单文件 HTML |
 
 ## 三、技术栈
 
@@ -262,7 +257,27 @@ docker compose up --build
 | `${PORT:-8000}` | 云平台会动态注入 PORT |
 | `.dockerignore` 排除 `.env` / `.venv` / `data` | 防止密钥进镜像、镜像体积膨胀 |
 
-## 十、目录结构
+## 十、静态看板导出
+
+除了部署运行,项目还支持把当前数据**导出为一份零依赖的单文件 HTML**:
+
+```bash
+python scripts/export_static.py
+# 生成 docs/index.html(约 19KB,双击即可打开)
+```
+
+**特点**:
+
+| 特性 | 说明 |
+|---|---|
+| **零外部依赖** | 图表用内联 SVG 手绘,不引用任何 CDN,离线可看 |
+| **单文件** | 一个 HTML 包含全部样式、数据、图表 |
+| **用途** | 托管到 GitHub Pages 做在线演示;或直接发给他人查看 |
+
+> 💡 **设计取舍**:之所以不用 Chart.js 等图表库,是因为要保证**离线可用**和**国内访问不受 CDN 影响**。
+> 用 100 行内联 SVG 代码换来了"永不加载失败",对于作品展示场景是更稳妥的选择。
+
+## 十一、目录结构
 
 ```
 logsentry/
@@ -290,14 +305,17 @@ logsentry/
 ├── scripts/
 │   ├── gen_traffic.py     # 造流量(可注入故障)
 │   ├── seed_demo.py       # 演示数据初始化
+│   ├── export_static.py   # 导出静态看板(零依赖单文件 HTML)
 │   └── test_llm.py        # 大模型连通性测试
+├── docs/
+│   └── index.html         # 静态看板快照(GitHub Pages 托管)
 ├── tests/                 # 12 个单元测试
 ├── data/                  # 运行时数据(git 忽略)
 ├── Dockerfile / docker-compose.yml / .dockerignore
 └── .github/workflows/ci.yml
 ```
 
-## 十一、环境变量
+## 十二、环境变量
 
 见 `.env.example`。**关键项**:
 
@@ -313,7 +331,7 @@ logsentry/
 > ⚠️ **`.env` 绝不能提交到 Git** —— 已在 `.gitignore` 和 `.dockerignore` 中双重排除。
 > 线上部署时通过平台的环境变量面板注入。
 
-## 十二、免责声明
+## 十三、免责声明
 
 本项目为个人学习与技术演示作品,**数据由脚本生成**,不涉及任何真实生产系统。
 日志格式参考 Nginx combined 格式并额外附加了响应耗时字段。
