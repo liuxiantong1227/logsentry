@@ -1,13 +1,33 @@
-# CI 占位，阶段 8 再补完整流程
-name: ci
+name: CI
+
 on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+
 jobs:
-  placeholder:
+  test:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - run: echo "CI skeleton"
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 运行单元测试
+        run: pytest tests -q
+
+      - name: 冒烟测试(启动服务并请求健康检查)
+        run: |
+          uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          sleep 8
+          python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/api/health').read().decode())"
